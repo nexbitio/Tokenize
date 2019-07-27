@@ -45,7 +45,7 @@ class Tokenize {
    */
   constructor (secret) {
     this._secret = secret
-    this._totp = new OTP()
+    this._otp = new OTP()
   }
 
   /**
@@ -55,9 +55,10 @@ class Tokenize {
    */
   generate (accountId) {
     const accountPart = Buffer.from(accountId).toString('base64')
-    const timePart = Buffer.from(this.currentTokenTime()).toString('base64')
-    const signature = this._computeHmac(`${accountPart}.${timePart}`)
-    return `${accountPart}.${timePart}.${signature}`.replace(/=/g, '')
+    const timePart = Buffer.from(this.currentTokenTime().toString()).toString('base64')
+    const token = `${accountPart}.${timePart}`.replace(/=/g, '')
+    const signature = this._computeHmac(token)
+    return `${token}.${signature}`
   }
 
   /**
@@ -66,11 +67,23 @@ class Tokenize {
    * token twice to enhance user's security (MITM or replay attacks)
    * @param {String} token Non-mfa token (NOTE: Validity won't be checked!)
    * @param {String} mfa User-provided 6 digit code
-   * @param {String} key MFA secret key ot the user
+   * @param {String} secret MFA secret key ot the user
+   * @param {Number} counter If not equals to -1 Tokenize will perform a HTOP check, TOTP check otherwise
    * @return {String} The upgraded token, or null if the MFA code is invalid
    */
-  upgrade (token, mfa, key) {
-    return ''
+  upgrade (token, mfa, secret, counter = -1) {
+    if (
+      !token.startsWith('mfa.') && (
+        (counter === -1 && this._otp.validateTotp(mfa, secret)) ||
+        (counter !== -1 && this._otp.validateHotp(mfa, secret, counter))
+      )
+    ) {
+      const parts = token.split('.')
+      const upgraded = `mfa.${parts[0]}.${parts[1]}`
+      const signature = this._computeHmac(upgraded)
+      return `${upgraded}.${signature}`
+    }
+    return null
   }
 
   /**
@@ -81,7 +94,18 @@ class Tokenize {
    * @return {Boolean} If the token is valid
    */
   validate (token, accountFetcher) {
-    return false
+    const isMfa = token.startsWith('mfa.')
+    const splitted = token.replace(/^mfa\./, '').split('.')
+    if (splitted.length !== 3) return false
+
+    const signatureStr = `${isMfa ? 'mfa.' : ''}${splitted[0]}.${splitted[1]}`
+    if (splitted[2] !== this._computeHmac(signatureStr)) return false
+
+    const accountId = Buffer.from(splitted[0], 'base64').toString('utf8')
+    const genTime = Buffer.from(splitted[1], 'base64').toString('utf8')
+    const accountDetails = accountFetcher(accountId)
+
+    return genTime > accountDetails.tokensValidSince && isMfa === accountDetails.hasMfa
   }
 
   /**
@@ -95,11 +119,11 @@ class Tokenize {
   /**
    * Signs a string with the HMAC-SHA256 algorithm
    * @param {String} string string to sign
-   * @return {String} Base64 digest with padding
+   * @return {String} Base64 digest without padding
    * @private
    */
   _computeHmac (string) {
-    return createHmac('sha256', this._secret).update(`TTF.${this.VERSION}.${string}`).digest('base64')
+    return createHmac('sha256', this._secret).update(`TTF.${this.VERSION}.${string}`).digest('base64').replace(/=/g, '')
   }
 }
 
