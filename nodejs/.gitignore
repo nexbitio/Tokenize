@@ -1,0 +1,12 @@
+# IntelliJ
+.idea
+
+# the petabyte of node_modules/node_modules/node_modules/node_modules/node_modules/node_modules/node_modules
+node_modules
+
+# outputs
+jsdoc
+build
+
+# test
+*.nogit.*

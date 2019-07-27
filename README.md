@@ -21,7 +21,8 @@ a successful 2FA flow or not.
 OTQ3NjI0OTI5MjM3NDgzNTI.MTc4MzkxODI.dGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNpZ25hdHVyZSB3ZHlt
 ----------------------- ----------- -------------------------------------------------
       Account ID         Gen. Date              HMAC SHA256 Signature
-      
+
+ - All parts are base64 encoded
  - MFA tokens are simply prefixed with "mfa."
  - The signature is based on everything that preceeds it (including "mfa.")
 ```
@@ -43,7 +44,7 @@ console.log(tokenize.upgrade('non-mfa token', 'mfa_code', 'mfa_key'))
 ```
 
 #### Validation
-The object returned by our function must have "tokens_valid_since" and "has_mfa" fields. Those are used to validate the
+The object returned by our function must have "tokensValidSince" and "hasMfa" fields. Those are used to validate the
 gen. date part and the mfa. prefix of the token
 
 ```js
@@ -51,7 +52,9 @@ import Tokenize from 'js-tokenize'
 const tokenize = new Tokenize('Very strong and secure secret')
 
 // Fetch account from db
-const fetchAccount = () => ({ tokens_valid_since: 0, has_mfa: false })
+// "tokensValidSince" value should be stored in db and computed using tokenize.currentTokenTime()
+// the field should be updated when the password changes or when MFA is enabled/disabled
+const fetchAccount = () => ({ tokensValidSince: 0, hasMfa: false })
 
 // Returns a boolean, true if valid false otherwise
 console.log(tokenize.validate(token, fetchAccount))

@@ -1,0 +1,37 @@
+{
+  "name": "js-tokenize",
+  "version": "1.0.0",
+  "description": "An universal and secure token generator for authentication. Available in multiple languages, supports 2FA authentication flow",
+  "main": "build/index.js",
+  "repository": "https://github.com/Bowser65/Tokenize",
+  "author": "Bowser65 <contact.bowser65@gmail.com>",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "lint": "eslint --ext js --ext jsx src",
+    "build": "babel src -d build --copy-files",
+    "jsdoc": "jsdoc -c .jsdoc.json -R ./README.md"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.5.0",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "@babel/plugin-proposal-export-default-from": "^7.2.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.5.0",
+    "@babel/plugin-syntax-dynamic-import": "^7.0.0",
+    "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "@babel/plugin-transform-runtime": "^7.5.0",
+    "@babel/preset-env": "^7.4.5",
+    "@babel/runtime": "^7.5.0",
+    "@babel/types": "^7.4.4",
+    "babel-eslint": "^10.0.2",
+    "eslint": "^6.0.1",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.1.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "jest": "^24.8.0",
+    "jsdoc": "^3.6.2",
+    "minami": "^1.2.3"
+  }
+}
