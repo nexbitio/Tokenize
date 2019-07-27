@@ -1,9 +1,12 @@
 # Tokenize for Node.js
 
+## Installation
+```
+yarn add js-tokenize
+npm i js-tokenize
+```
+
 ## How to use it
-**Note**: While it's simple to make an universal token format, an universal lib format is a bit more hard, so
-implementation may vary a bit depending on the language. We use NodeJS in the following examples, but there are
-examples written for each language in their repository.
 
 ### Generation
 ```js
@@ -31,4 +34,4 @@ const fetchAccount = () => ({ tokensValidSince: 0, hasMfa: false })
 
 // Returns a boolean, true if valid false otherwise
 console.log(tokenize.validate(token, fetchAccount))
-```
+`````

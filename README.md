@@ -6,7 +6,9 @@
 An universal and secure token generator for authentication. Available in multiple languages, supports 2FA authentication
 flow.
 
-Tokenize is proudly built without any dependency 🎉
+Tokenize is available in Java, NodeJS, Golang, Elixir, Python and PHP, and is proudly built without any dependency 🎉
+
+You can get installation procedure for each language in the README.md of their folder
 
 ## Format
 Tokenize token format (TTF, not to be confused with TrueType Font :^)) is inspired from the [JWT](https://jwt.io/)
@@ -24,7 +26,7 @@ OTQ3NjI0OTI5MjM3NDgzNTI.MTc4MzkxODI.dGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNpZ25hdHVyZSB3
 
  - All parts are base64 encoded
  - MFA tokens are simply prefixed with "mfa."
- - The signature is based on everything that preceeds it (including "mfa.")
+ - The signature is based on everything that preceeds it (including "mfa.") and a prefix "TTF.{version_number}"
 ```
 
 ### How to use it
@@ -61,4 +63,4 @@ console.log(tokenize.validate(token, fetchAccount))
 ```
 
 ## Acknowledgements
-Thanks to [AlexFlipnote](https://github.com/AlexFlipnote) for maintaining the Python version of tokenize <3
+Thanks to [AlexFlipnote](https://github.com/AlexFlipnote) for maintaining the Python version of Tokenize <3
