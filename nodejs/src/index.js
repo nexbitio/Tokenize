@@ -17,7 +17,7 @@
  */
 
 import { createHmac } from 'crypto'
-import TOTP from './totp'
+import OTP from './otp'
 
 /**
  * @class Tokenize
@@ -45,7 +45,7 @@ class Tokenize {
    */
   constructor (secret) {
     this._secret = secret
-    this._totp = new TOTP()
+    this._totp = new OTP()
   }
 
   /**
@@ -57,7 +57,7 @@ class Tokenize {
     const accountPart = Buffer.from(accountId).toString('base64')
     const timePart = Buffer.from(this.currentTokenTime()).toString('base64')
     const signature = this._computeHmac(`${accountPart}.${timePart}`)
-    return `${accountPart}.${timePart}.${signature}`
+    return `${accountPart}.${timePart}.${signature}`.replace(/=/g, '')
   }
 
   /**
@@ -95,11 +95,11 @@ class Tokenize {
   /**
    * Signs a string with the HMAC-SHA256 algorithm
    * @param {String} string string to sign
-   * @return {String} Base64 digest without padding
+   * @return {String} Base64 digest with padding
    * @private
    */
   _computeHmac (string) {
-    return createHmac('sha256', this._secret).update(`TTF.${this.VERSION}.${string}`).digest('base64').replace(/=/g, '')
+    return createHmac('sha256', this._secret).update(`TTF.${this.VERSION}.${string}`).digest('base64')
   }
 }
 

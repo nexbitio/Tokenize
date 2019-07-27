@@ -18,81 +18,77 @@
 
 /**
  * @class Base32
- * @author Isaac "agnoster" Wolkerstorfer
- * @see https://github.com/agnoster/base32-js
- * @licence MIT
+ * @author Bowser65
+ * @since 27/07/19
  */
 class Base32 {
-  static alphabet = '0123456789abcdefghjkmnpqrtuvwxyz'
-  static alias = { o: 0, i: 1, l: 1, s: 5 }
-  static _table = null
+  static alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+
+  static charmap = null
 
   static encode (data) {
-    let skip = 0
-    let bits = 0
     let encoded = ''
+    let shift = 3
+    let carry = 0
+    let symbol
+    let byte
 
-    for (let i = 0; i < data.length;) {
-      const byte = typeof data[i] === 'string' ? data[i].charCodeAt(0) : data[i]
+    // encode each byte in buf
+    for (let i = 0; i < data.length; i++) {
+      byte = data[i]
+      symbol = carry | (byte >> shift)
+      encoded += Base32.alphabet[symbol & 0x1f]
 
-      if (skip < 0) bits |= (byte >> (-skip))
-      else bits = (byte << skip) & 248
-
-      if (skip > 3) {
-        skip -= 8
-        i += 1
-      } else {
-        if (skip < 4) {
-          encoded += Base32.alphabet[bits >> 3]
-          skip += 5
-        }
+      if (shift > 5) {
+        shift -= 5
+        symbol = byte >> shift
+        encoded += Base32.alphabet[symbol & 0x1f]
       }
+
+      shift = 5 - shift
+      carry = byte << shift
+      shift = 8 - shift
     }
 
-    encoded += skip < 0 ? Base32.alphabet[bits >> 3] : ''
+    if (shift !== 3) encoded += Base32.alphabet[carry & 0x1f]
     return encoded
   }
 
   static decode (data) {
-    let skip = 0
-    let byte = 0
-    let decoded = ''
+    Base32._charmap()
+    const buf = []
+    let shift = 8
+    let carry = 0
 
-    for (let i = 0; i < data.length; i++) {
-      const char = (typeof data[i] === 'string' ? String.fromCharCode(data[i]) : data[i]).toLowerCase()
-      let val = Base32._lookup()[char]
-      if (typeof val === 'undefined') return
+    // decode string
+    data.toUpperCase().split('').forEach((char) => {
+      if (char === '') return
+      const symbol = Base32.charmap[char] & 0xff
 
-      val <<= 3
-      byte |= val >>> skip
-      skip += 5
-      if (skip >= 8) {
-        decoded += String.fromCharCode(byte)
-        skip -= 8
-        if (skip > 0) byte = (val << (5 - skip)) & 255
-        else byte = 0
+      shift -= 5
+      if (shift > 0) {
+        carry |= symbol << shift
+      } else if (shift < 0) {
+        buf.push(carry | (symbol >> -shift))
+        shift += 8
+        carry = (symbol << shift) & 0xff
+      } else {
+        buf.push(carry | symbol)
+        shift = 8
+        carry = 0
       }
-    }
+    })
 
-    decoded += skip < 0 ? Base32.alphabet[byte >> 3] : ''
-    return decoded
+    if (shift !== 8 && carry !== 0) buf.push(carry)
+    return Buffer.from(buf)
   }
 
-  static _lookup () {
-    if (!Base32._table) {
-      Base32._table = {}
-
-      for (let i = 0; i < Base32.alphabet.length; i++) {
-        Base32._table[Base32.alphabet[i]] = i
-      }
-
-      for (const key in Base32.alias) {
-        if (!Base32.alias.hasOwnProperty(key)) continue
-        Base32._table[key] = Base32._table[Base32.alias[key].toString()]
-      }
+  static _charmap () {
+    if (!Base32.charmap) {
+      const mappings = { 0: 14, 1: 8 }
+      Base32.alphabet.split('').forEach((c, i) => { if (!(c in mappings)) mappings[c] = i })
+      Base32.charmap = mappings
     }
-
-    return Base32._table
   }
 }
 
