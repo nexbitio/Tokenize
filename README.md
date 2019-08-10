@@ -1,12 +1,13 @@
 # Tokenize
 [![Build Status](https://img.shields.io/travis/Bowser65/Tokenize/master.svg?style=flat-square&logo=travis)](https://travis-ci.org/Bowser65/Tokenize)
-[![License](https://img.shields.io/github/license/Bowser65/Tokenize.svg?style=flat-square)](https://github.com/learndesk/mailcheck/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/Bowser65/Tokenize.svg?style=flat-square)](https://github.com/Bowser65/Tokenize/blob/master/LICENSE)
 [![Donate](https://img.shields.io/badge/donate-Patreon-F96854.svg?style=flat-square)](https://www.patreon.com/Bowser65)
 
 An universal and secure token generator for authentication. Available in multiple languages, supports 2FA authentication
 flow.
 
-Tokenize is available in Java, NodeJS, Golang, Elixir, Python and PHP, and is proudly built without any dependency 🎉
+Tokenize is available in Java, NodeJS (10+), Golang, Elixir, Python and PHP (7.2+), and is proudly built without any
+dependency 🎉
 
 You can get installation procedure for each language in the README.md of their folder
 

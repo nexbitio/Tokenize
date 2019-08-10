@@ -40,10 +40,17 @@ class OTP {
   _usedMfa = {}
 
   validateHotp (token, secret, counter) {
+    if (!this._usedMfa[secret]) this._usedMfa[secret] = []
+    if (this._usedMfa[secret].includes(token)) return false
+
     const counterInt = parseInt(counter, 10) || 0
     if (!secret || !token || token.length !== 6 || isNaN(parseInt(token, 10))) return false
 
-    return this._computeHotp(secret, counterInt) === token
+    if (this._computeHotp(secret, counterInt) === token) {
+      this._usedMfa[secret].push(token)
+      return true
+    }
+    return false
   }
 
   validateTotp (token, secret) {
