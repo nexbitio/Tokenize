@@ -6,8 +6,8 @@
 An universal and secure token generator for authentication. Available in multiple languages, supports 2FA authentication
 flow.
 
-Tokenize is available in Java, NodeJS (10+), Golang, Elixir, Python and PHP (7.2+), and is proudly built without any
-dependency 🎉
+Tokenize is available in Java (1.8+), NodeJS (10+), Golang, Elixir, Python and PHP (7.2+), and is proudly built without
+any dependency 🎉
 
 You can get installation procedure for each language in the README.md of their folder
 

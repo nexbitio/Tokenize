@@ -15,15 +15,18 @@ import java.util.function.Function;
  * @author Bowser65
  * @since 10/08/19
  */
+@SuppressWarnings("WeakerAccess")
 class Tokenize {
     /**
      * Tokenize Token Format version.
      */
+    @SuppressWarnings("FieldCanBeLocal")
     private final int VERSION = 1;
 
     /**
      * First second of 2019, used to get shorter tokens.
      */
+    @SuppressWarnings("FieldCanBeLocal")
     private final long TOKENIZE_EPOCH = 1546300800000L;
 
     /**
@@ -43,9 +46,16 @@ class Tokenize {
      */
     @Nonnull
     public String generate(@Nonnull String accountId) {
-        return "";
+        final String accountPart = new String(Base64.getEncoder().encode(accountId.getBytes(StandardCharsets.UTF_8)));
+        final String timePart = new String(Base64.getEncoder().encode(String.valueOf(currentTokenTime()).getBytes(StandardCharsets.UTF_8)));
+        final String firstPart = (accountPart + "." + timePart).replace("=", "");
+        final String signaturePart = computeHmac(firstPart);
+        return firstPart + "." + signaturePart;
     }
 
+    /**
+     * @see Tokenize#upgrade(String, String, String, Integer)
+     */
     @Nullable
     public String upgrade(@Nonnull String token, @Nonnull String mfa, @Nonnull String secret) {
         return upgrade(token, mfa, secret, null);
@@ -62,7 +72,16 @@ class Tokenize {
      */
     @Nullable
     public String upgrade(@Nonnull String token, @Nonnull String mfa, @Nonnull String secret, @Nullable Integer counter) {
+        // @todo: otp
         return null;
+    }
+
+    /**
+     * @see Tokenize#validate(String, Function, boolean)
+     */
+    @Nullable
+    public IAccount validate(@Nonnull String token, @Nonnull Function<String, IAccount> accountFetcher) {
+        return validate(token, accountFetcher, false);
     }
 
     /**
@@ -71,11 +90,28 @@ class Tokenize {
      * @param token          The token to validate
      * @param accountFetcher The function used to fetch the account. It'll receive the account id as a string
      *                       and should return the complete account entry. It'll be returned if the token is valid.
+     * @param ignoreMfa      Whether or not MFA check should be performed. If true, only non-mfa tokens will be
+     *                       accepted. Can be used to make "ticket tokens", where the user entered correct credentials
+     *                       but didn't performed MFA check
      * @return The account if the token is valid, null otherwise.
      */
     @Nullable
-    public IAccount validate(@Nonnull String token, @Nonnull Function<String, IAccount> accountFetcher) {
-        return null;
+    public IAccount validate(@Nonnull String token, @Nonnull Function<String, IAccount> accountFetcher, boolean ignoreMfa) {
+        final boolean isMfa = token.startsWith("mfa.");
+        final String[] splitted = token.replace("mfa.", "").split("\\.");
+        if (splitted.length != 3) return null;
+
+        final StringBuilder builder = new StringBuilder();
+        if (isMfa) builder.append("mfa.");
+        builder.append(splitted[0]).append(".").append(splitted[1]);
+
+        final String signature = computeHmac(builder.toString());
+        if (splitted[2].equals(signature)) return null;
+
+        final long tokenTime = Long.valueOf(new String(Base64.getDecoder().decode(splitted[1])));
+        final IAccount account = accountFetcher.apply(new String(Base64.getDecoder().decode(splitted[0])));
+
+        return tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa() ? account : null;
     }
 
     /**
@@ -92,7 +128,7 @@ class Tokenize {
             hmac.init(key);
 
             final byte[] data = hmac.doFinal(("TTF." + VERSION + "." + string).getBytes(StandardCharsets.UTF_8));
-            return new String(Base64.getEncoder().encode(data));
+            return new String(Base64.getEncoder().encode(data)).replace("=", "");
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Tokenize is unable to function if HmacSHA256 algorithm isn't present!");
         } catch (Throwable e) {

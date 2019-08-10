@@ -8,7 +8,7 @@ package xyz.bowser65.tokenize;
 public interface IAccount {
     /**
      * Should return the Tokenize timestamp since when tokens are valid.
-     * Use {@link Tokenize} to get it when you're creating an account or when you
+     * Use {@link Tokenize#currentTokenTime()} to get it when you're creating an account or when you
      * need to invalidate tokens
      *
      * @return Tokenize timestamp since when tokens are valid.

@@ -92,9 +92,12 @@ class Tokenize {
    * @param {Function} accountFetcher The function used to fetch the account. It'll receive the account id as a string
    *                                  and should return an object with 'tokensValidSince' and 'hasMfa' fields.
    *                                  It'll be returned if the token is valid.
+   * @param {Boolean} ignoreMfa Whether or not MFA check should be performed. If true, only non-mfa tokens will be
+   *                            accepted. Can be used to make "ticket tokens", where the user entered correct
+   *                            credentials but didn't performed MFA check
    * @return {object|null} The account if the token is valid, null otherwise.
    */
-  validate (token, accountFetcher) {
+  validate (token, accountFetcher, ignoreMfa) {
     const isMfa = token.startsWith('mfa.')
     const splitted = token.replace(/^mfa\./, '').split('.')
     if (splitted.length !== 3) return false
@@ -106,7 +109,7 @@ class Tokenize {
     const genTime = Buffer.from(splitted[1], 'base64').toString('utf8')
     const accountDetails = accountFetcher(accountId)
 
-    return genTime > accountDetails.tokensValidSince && isMfa === accountDetails.hasMfa ? accountDetails : null
+    return genTime > accountDetails.tokensValidSince && (!ignoreMfa && isMfa) === accountDetails.hasMfa ? accountDetails : null
   }
 
   /**
