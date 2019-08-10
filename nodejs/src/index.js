@@ -67,15 +67,15 @@ class Tokenize {
    * token twice to enhance user's security (MITM or replay attacks)
    * @param {String} token Non-mfa token (NOTE: Validity won't be checked!)
    * @param {String} mfa User-provided 6 digit code
-   * @param {String} secret MFA secret key ot the user
-   * @param {Number} counter If not equals to -1 Tokenize will perform a HTOP check, TOTP check otherwise
+   * @param {String} secret MFA secret bound to the user
+   * @param {Number} counter If null Tokenize will perform a TOTP check, HOTP check otherwise
    * @return {String} The upgraded token, or null if the MFA code is invalid
    */
-  upgrade (token, mfa, secret, counter = -1) {
+  upgrade (token, mfa, secret, counter = null) {
     if (
       !token.startsWith('mfa.') && (
-        (counter === -1 && this._otp.validateTotp(mfa, secret)) ||
-        (counter !== -1 && this._otp.validateHotp(mfa, secret, counter))
+        (counter === null && this._otp.validateTotp(mfa, secret)) ||
+        (counter !== null && this._otp.validateHotp(mfa, secret, counter))
       )
     ) {
       const parts = token.split('.')
@@ -89,9 +89,10 @@ class Tokenize {
   /**
    * Validates a token
    * @param {String} token The provided token
-   * @param {Function} accountFetcher The account fetcher function. Must accept as first param the account id,
-   *                                  and return an object with 'tokensValidSince' and 'hasMfa' fields.
-   * @return {Boolean} If the token is valid
+   * @param {Function} accountFetcher The function used to fetch the account. It'll receive the account id as a string
+   *                                  and should return an object with 'tokensValidSince' and 'hasMfa' fields.
+   *                                  It'll be returned if the token is valid.
+   * @return {object|null} The account if the token is valid, null otherwise.
    */
   validate (token, accountFetcher) {
     const isMfa = token.startsWith('mfa.')
@@ -105,7 +106,7 @@ class Tokenize {
     const genTime = Buffer.from(splitted[1], 'base64').toString('utf8')
     const accountDetails = accountFetcher(accountId)
 
-    return genTime > accountDetails.tokensValidSince && isMfa === accountDetails.hasMfa
+    return genTime > accountDetails.tokensValidSince && isMfa === accountDetails.hasMfa ? accountDetails : null
   }
 
   /**
