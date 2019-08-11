@@ -16,7 +16,7 @@ import java.util.function.Function;
  * @since 10/08/19
  */
 @SuppressWarnings("WeakerAccess")
-class Tokenize {
+public class Tokenize {
     /**
      * Tokenize Token Format version.
      */
@@ -134,6 +134,5 @@ class Tokenize {
         } catch (Throwable e) {
             throw new RuntimeException("is this ever reachable?");
         }
-
     }
 }
