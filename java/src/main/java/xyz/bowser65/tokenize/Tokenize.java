@@ -25,6 +25,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -97,8 +98,8 @@ public class Tokenize {
     /**
      * @see Tokenize#validate(String, Function, boolean)
      */
-    @Nullable
-    public IAccount validate(@Nonnull String token, @Nonnull Function<String, IAccount> accountFetcher) {
+    @Nonnull
+    public CompletableFuture<IAccount> validate(@Nonnull String token, @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher) {
         return validate(token, accountFetcher, false);
     }
 
@@ -113,23 +114,25 @@ public class Tokenize {
      *                       but didn't performed MFA check
      * @return The account if the token is valid, null otherwise.
      */
-    @Nullable
-    public IAccount validate(@Nonnull String token, @Nonnull Function<String, IAccount> accountFetcher, boolean ignoreMfa) {
+    @Nonnull
+    public CompletableFuture<IAccount> validate(@Nonnull String token, @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher, boolean ignoreMfa) {
+        final CompletableFuture<IAccount> future = new CompletableFuture<>();
+
         final boolean isMfa = token.startsWith("mfa.");
         final String[] splitted = token.replace("mfa.", "").split("\\.");
-        if (splitted.length != 3) return null;
+        if (splitted.length != 3) future.complete(null);
 
         final StringBuilder builder = new StringBuilder();
         if (isMfa) builder.append("mfa.");
         builder.append(splitted[0]).append(".").append(splitted[1]);
 
         final String signature = computeHmac(builder.toString());
-        if (splitted[2].equals(signature)) return null;
+        if (splitted[2].equals(signature)) future.complete(null);
 
         final long tokenTime = Long.valueOf(new String(Base64.getDecoder().decode(splitted[1])));
-        final IAccount account = accountFetcher.apply(new String(Base64.getDecoder().decode(splitted[0])));
-
-        return tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa() ? account : null;
+        final CompletableFuture<IAccount> accountFuture = accountFetcher.apply(new String(Base64.getDecoder().decode(splitted[0])));
+        accountFuture.thenAccept(account -> future.complete(tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa() ? account : null));
+        return future;
     }
 
     /**
