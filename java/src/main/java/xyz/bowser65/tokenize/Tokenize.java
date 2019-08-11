@@ -39,14 +39,12 @@ public class Tokenize {
     /**
      * Tokenize Token Format version.
      */
-    @SuppressWarnings("FieldCanBeLocal")
-    private final int VERSION = 1;
+    public static final int VERSION = 1;
 
     /**
      * First second of 2019, used to get shorter tokens.
      */
-    @SuppressWarnings("FieldCanBeLocal")
-    private final long TOKENIZE_EPOCH = 1546300800000L;
+    public static final long TOKENIZE_EPOCH = 1546300800000L;
 
     /**
      * Secret used to sign tokens.
@@ -131,14 +129,14 @@ public class Tokenize {
 
         final long tokenTime = Long.valueOf(new String(Base64.getDecoder().decode(splitted[1])));
         final CompletableFuture<IAccount> accountFuture = accountFetcher.apply(new String(Base64.getDecoder().decode(splitted[0])));
-        accountFuture.thenAccept(account -> future.complete(tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa() ? account : null));
+        accountFuture.thenAccept(account -> future.complete(account != null && tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa() ? account : null));
         return future;
     }
 
     /**
      * @return Current token time based on the Tokenize Epoch
      */
-    public long currentTokenTime() {
+    public static long currentTokenTime() {
         return (System.currentTimeMillis() - TOKENIZE_EPOCH) / 1000;
     }
 
