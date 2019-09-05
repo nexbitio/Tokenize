@@ -118,14 +118,20 @@ public class Tokenize {
 
         final boolean isMfa = token.startsWith("mfa.");
         final String[] splitted = token.replace("mfa.", "").split("\\.");
-        if (splitted.length != 3) future.complete(null);
+        if (splitted.length != 3) {
+            future.complete(null);
+            return future;
+        }
 
         final StringBuilder builder = new StringBuilder();
         if (isMfa) builder.append("mfa.");
         builder.append(splitted[0]).append(".").append(splitted[1]);
 
         final String signature = computeHmac(builder.toString());
-        if (splitted[2].equals(signature)) future.complete(null);
+        if (!splitted[2].equals(signature)) {
+            future.complete(null);
+            return future;
+        }
 
         final long tokenTime = Long.valueOf(new String(Base64.getDecoder().decode(splitted[1])));
         final CompletableFuture<IAccount> accountFuture = accountFetcher.apply(new String(Base64.getDecoder().decode(splitted[0])));
