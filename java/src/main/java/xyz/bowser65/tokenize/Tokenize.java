@@ -55,6 +55,10 @@ public class Tokenize {
         this.secret = secret.getBytes(StandardCharsets.UTF_8);
     }
 
+    public Tokenize(byte[] secret) {
+        this.secret = secret;
+    }
+
     /**
      * Generates a token for a given account id.
      *
@@ -64,7 +68,8 @@ public class Tokenize {
     @Nonnull
     public String generate(@Nonnull String accountId) {
         final String accountPart = new String(Base64.getEncoder().encode(accountId.getBytes(StandardCharsets.UTF_8)));
-        final String timePart = new String(Base64.getEncoder().encode(String.valueOf(currentTokenTime()).getBytes(StandardCharsets.UTF_8)));
+        final String timePart = new String(
+                Base64.getEncoder().encode(String.valueOf(currentTokenTime()).getBytes(StandardCharsets.UTF_8)));
         final String firstPart = (accountPart + "." + timePart).replace("=", "");
         final String signaturePart = computeHmac(firstPart);
         return firstPart + "." + signaturePart;
@@ -84,11 +89,13 @@ public class Tokenize {
      * @param token   The non-mfa token of the user.
      * @param mfa     User-provided 6 digit code.
      * @param secret  MFA secret bound to the user.
-     * @param counter If null Tokenize will perform a TOTP check, HOTP check otherwise.
+     * @param counter If null Tokenize will perform a TOTP check, HOTP check
+     *                otherwise.
      * @return A valid, mfa token or null if the upgrade failed (Invalid MFA code).
      */
     @Nullable
-    public String upgrade(@Nonnull String token, @Nonnull String mfa, @Nonnull String secret, @Nullable Integer counter) {
+    public String upgrade(@Nonnull String token, @Nonnull String mfa, @Nonnull String secret,
+            @Nullable Integer counter) {
         // @todo: otp
         return null;
     }
@@ -97,7 +104,8 @@ public class Tokenize {
      * @see Tokenize#validate(String, Function, boolean)
      */
     @Nonnull
-    public CompletableFuture<IAccount> validate(@Nonnull String token, @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher) {
+    public CompletableFuture<IAccount> validate(@Nonnull String token,
+            @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher) {
         return validate(token, accountFetcher, false);
     }
 
@@ -105,15 +113,19 @@ public class Tokenize {
      * Validates if a token is valid or not.
      *
      * @param token          The token to validate
-     * @param accountFetcher The function used to fetch the account. It'll receive the account id as a string
-     *                       and should return the complete account entry. It'll be returned if the token is valid.
-     * @param ignoreMfa      Whether or not MFA check should be performed. If true, only non-mfa tokens will be
-     *                       accepted. Can be used to make "ticket tokens", where the user entered correct credentials
-     *                       but didn't performed MFA check
+     * @param accountFetcher The function used to fetch the account. It'll receive
+     *                       the account id as a string and should return the
+     *                       complete account entry. It'll be returned if the token
+     *                       is valid.
+     * @param ignoreMfa      Whether or not MFA check should be performed. If true,
+     *                       only non-mfa tokens will be accepted. Can be used to
+     *                       make "ticket tokens", where the user entered correct
+     *                       credentials but didn't performed MFA check
      * @return The account if the token is valid, null otherwise.
      */
     @Nonnull
-    public CompletableFuture<IAccount> validate(@Nonnull String token, @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher, boolean ignoreMfa) {
+    public CompletableFuture<IAccount> validate(@Nonnull String token,
+            @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher, boolean ignoreMfa) {
         final CompletableFuture<IAccount> future = new CompletableFuture<>();
 
         final boolean isMfa = token.startsWith("mfa.");
@@ -124,7 +136,8 @@ public class Tokenize {
         }
 
         final StringBuilder builder = new StringBuilder();
-        if (isMfa) builder.append("mfa.");
+        if (isMfa)
+            builder.append("mfa.");
         builder.append(splitted[0]).append(".").append(splitted[1]);
 
         final String signature = computeHmac(builder.toString());
@@ -134,9 +147,36 @@ public class Tokenize {
         }
 
         final long tokenTime = Long.valueOf(new String(Base64.getDecoder().decode(splitted[1])));
-        final CompletableFuture<IAccount> accountFuture = accountFetcher.apply(new String(Base64.getDecoder().decode(splitted[0])));
-        accountFuture.thenAccept(account -> future.complete(account != null && tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa() ? account : null));
+        final CompletableFuture<IAccount> accountFuture = accountFetcher
+                .apply(new String(Base64.getDecoder().decode(splitted[0])));
+        accountFuture.thenAccept(account -> future.complete(
+                account != null && tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa()
+                        ? account
+                        : null));
         return future;
+    }
+
+    /**
+     * Decodes and returns the time part of a token.
+     * @param token The full token string
+     * @return The token time in seconds relative to the Tokenize Epoch
+     */
+    public static long getTime(String token) {
+        final String[] splitted = token.replace("mfa.", "").split("\\.");
+        if (splitted.length != 3)
+            throw new IllegalArgumentException("Token isn't formatted correctly");
+
+        return Long.parseLong(new String(Base64.getDecoder().decode(token.getBytes(StandardCharsets.UTF_8))));
+    }
+
+    /**
+     * Checks if a token has expired according to the specified timeout
+     * @param token The full token string
+     * @param timeout The timeout in seconds
+     * @return {@code true} if the token has expired, {@code false} otherwise
+     */
+    public static boolean hasTokenExpired(String token, long timeout) {
+        return currentTokenTime() - getTime(token) > timeout;
     }
 
     /**
