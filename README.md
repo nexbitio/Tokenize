@@ -21,13 +21,12 @@ a successful 2FA flow or not.
 
 ### What does it look like
 ```
-OTQ3NjI0OTI5MjM3NDgzNTI.MTc4MzkxODI.dGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNpZ25hdHVyZSB3ZHlt
------------------------ ----------- -------------------------------------------------
-      Account ID         Gen. Date              HMAC SHA256 Signature
+xxxxxx.OTQ3NjI0OTI5MjM3NDgzNTI.MTc4MzkxODI.dGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNpZ25hdHVyZSB3ZHlt
+------ ----------------------- ----------- -------------------------------------------------
+Prefix       Account ID         Gen. Date              HMAC SHA256 Signature
 
- - All parts are base64 encoded
- - MFA tokens are simply prefixed with "mfa."
- - The signature is based on everything that preceeds it (including "mfa.") and a prefix "TTF.{version_number}"
+ - All parts are base64 encoded, except the prefix
+ - The signature is based on everything that preceeds it and a prefix "TTF.{version_number}"
 ```
 
 ### How to use it

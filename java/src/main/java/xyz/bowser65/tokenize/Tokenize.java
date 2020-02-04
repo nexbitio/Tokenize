@@ -1,6 +1,6 @@
 /*
  * Tokenize, universal and secure token generator for authentication
- * Copyright (C) 2019 Bowser65
+ * Copyright (C) 2019-present Bowser65
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,8 +22,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.text.html.InlineView;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -51,132 +53,62 @@ public class Tokenize {
      */
     private final byte[] secret;
 
-    public Tokenize(@Nonnull String secret) {
-        this.secret = secret.getBytes(StandardCharsets.UTF_8);
-    }
-
-    public Tokenize(byte[] secret) {
+    public Tokenize(final byte[] secret) {
         this.secret = secret;
     }
 
-    /**
-     * Generates a token for a given account id.
-     *
-     * @param accountId ID of the account.
-     * @return A valid, non-mfa token.
-     */
     @Nonnull
-    public String generate(@Nonnull String accountId) {
-        final String accountPart = new String(Base64.getEncoder().encode(accountId.getBytes(StandardCharsets.UTF_8)));
-        final String timePart = new String(
-                Base64.getEncoder().encode(String.valueOf(currentTokenTime()).getBytes(StandardCharsets.UTF_8)));
-        final String firstPart = (accountPart + "." + timePart).replace("=", "");
-        final String signaturePart = computeHmac(firstPart);
-        return firstPart + "." + signaturePart;
+    public Token generateToken(@Nonnull final IAccount account) {
+        return this.generateToken(account, null);
     }
 
-    /**
-     * @see Tokenize#upgrade(String, String, String, Integer)
-     */
-    @Nullable
-    public String upgrade(@Nonnull String token, @Nonnull String mfa, @Nonnull String secret) {
-        return upgrade(token, mfa, secret, null);
-    }
-
-    /**
-     * Upgrades a token and turns it into a mfa token.
-     *
-     * @param token   The non-mfa token of the user.
-     * @param mfa     User-provided 6 digit code.
-     * @param secret  MFA secret bound to the user.
-     * @param counter If null Tokenize will perform a TOTP check, HOTP check
-     *                otherwise.
-     * @return A valid, mfa token or null if the upgrade failed (Invalid MFA code).
-     */
-    @Nullable
-    public String upgrade(@Nonnull String token, @Nonnull String mfa, @Nonnull String secret,
-            @Nullable Integer counter) {
-        // @todo: otp
-        return null;
-    }
-
-    /**
-     * @see Tokenize#validate(String, Function, boolean)
-     */
     @Nonnull
-    public CompletableFuture<IAccount> validate(@Nonnull String token,
-            @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher) {
-        return validate(token, accountFetcher, false);
+    public Token generateToken(@Nonnull final IAccount account, @Nullable final String prefix) {
+        return new Token(this, account, prefix, currentTokenTime());
     }
 
     /**
-     * Validates if a token is valid or not.
+     * Validates a token
      *
      * @param token          The token to validate
-     * @param accountFetcher The function used to fetch the account. It'll receive
-     *                       the account id as a string and should return the
-     *                       complete account entry. It'll be returned if the token
-     *                       is valid.
-     * @param ignoreMfa      Whether or not MFA check should be performed. If true,
-     *                       only non-mfa tokens will be accepted. Can be used to
-     *                       make "ticket tokens", where the user entered correct
-     *                       credentials but didn't performed MFA check
-     * @return The account if the token is valid, null otherwise.
+     * @param accountFetcher A function used to get the account associated with an ID
+     * @return A {@link Token}, or null if no account is associated or if the token has been revoked
+     * @throws SignatureException If the token signature is invalid
      */
-    @Nonnull
-    public CompletableFuture<IAccount> validate(@Nonnull String token,
-            @Nonnull Function<String, CompletableFuture<IAccount>> accountFetcher, boolean ignoreMfa) {
-        final CompletableFuture<IAccount> future = new CompletableFuture<>();
+    @Nullable
+    public Token validateToken(@Nonnull final String token, @Nonnull Function<String, IAccount> accountFetcher) throws SignatureException {
+        final String[] parts = token.split("\\.");
+        String prefix, encodedAccount, encodedTime;
+        boolean signatureValid;
 
-        final boolean isMfa = token.startsWith("mfa.");
-        final String[] splitted = token.replace("mfa.", "").split("\\.");
-        if (splitted.length != 3) {
-            future.complete(null);
-            return future;
+        if (parts.length != 3 && parts.length != 4) {
+            throw new IllegalArgumentException("Invalid token: expected 3 or 4 parts, got " + parts.length);
         }
 
-        final StringBuilder builder = new StringBuilder();
-        if (isMfa)
-            builder.append("mfa.");
-        builder.append(splitted[0]).append(".").append(splitted[1]);
-
-        final String signature = computeHmac(builder.toString());
-        if (!splitted[2].equals(signature)) {
-            future.complete(null);
-            return future;
+        if (parts.length == 4) {
+            prefix = parts[0];
+            encodedAccount = parts[1];
+            encodedTime = parts[2];
+            signatureValid = computeHmac(prefix + '.' + encodedAccount + '.' + encodedTime).equals(parts[3]);
+        } else {
+            prefix = null;
+            encodedAccount = parts[0];
+            encodedTime = parts[1];
+            signatureValid = computeHmac(encodedAccount + '.' + encodedTime).equals(parts[2]);
         }
 
-        final long tokenTime = Long.valueOf(new String(Base64.getDecoder().decode(splitted[1])));
-        final CompletableFuture<IAccount> accountFuture = accountFetcher
-                .apply(new String(Base64.getDecoder().decode(splitted[0])));
-        accountFuture.thenAccept(account -> future.complete(
-                account != null && tokenTime > account.tokensValidSince() && (!ignoreMfa && isMfa) == account.hasMfa()
-                        ? account
-                        : null));
-        return future;
-    }
+        if (!signatureValid) {
+            throw new SignatureException("Invalid signature");
+        }
 
-    /**
-     * Decodes and returns the time part of a token.
-     * @param token The full token string
-     * @return The token time in seconds relative to the Tokenize Epoch
-     */
-    public static long getTime(String token) {
-        final String[] splitted = token.replace("mfa.", "").split("\\.");
-        if (splitted.length != 3)
-            throw new IllegalArgumentException("Token isn't formatted correctly");
+        final String accountId = new String(Base64.getDecoder().decode(encodedAccount));
+        final long tokenTime = Long.parseLong(new String(Base64.getDecoder().decode(encodedTime)));
+        final IAccount account = accountFetcher.apply(accountId);
 
-        return Long.parseLong(new String(Base64.getDecoder().decode(token.getBytes(StandardCharsets.UTF_8))));
-    }
-
-    /**
-     * Checks if a token has expired according to the specified timeout
-     * @param token The full token string
-     * @param timeout The timeout in seconds
-     * @return {@code true} if the token has expired, {@code false} otherwise
-     */
-    public static boolean hasTokenExpired(String token, long timeout) {
-        return currentTokenTime() - getTime(token) > timeout;
+        if (account != null && tokenTime > account.tokensValidSince()) {
+            return new Token(this, account, prefix, tokenTime);
+        }
+        return null;
     }
 
     /**
@@ -186,7 +118,7 @@ public class Tokenize {
         return (System.currentTimeMillis() - TOKENIZE_EPOCH) / 1000;
     }
 
-    private String computeHmac(String string) {
+    String computeHmac(final String string) {
         try {
             final Mac hmac = Mac.getInstance("HmacSHA256");
             final SecretKeySpec key = new SecretKeySpec(secret, "HmacSHA256");
