@@ -114,27 +114,6 @@ public class Tokenize {
     }
 
     /**
-     * Validates a token
-     *
-     * @param token     The token to validate
-     * @param fetchFunc A function used to get the account associated with an ID
-     * @return A {@link Token}, or null if no account is associated or if the token
-     *         has been revoked
-     * @throws SignatureException If the token signature is invalid
-     */
-    @Nonnull
-    public Token validateToken(@Nonnull final String token, @Nonnull Function<String, IAccount> fetchFunc)
-            throws SignatureException {
-        return validateToken(token, new AccountFetcher() {
-
-            @Override
-            public IAccount fetchAccount(String id) {
-                return fetchFunc.apply(id);
-            }
-        });
-    }
-
-    /**
      * @return Current token time based on the Tokenize Epoch
      */
     public static long currentTokenTime() {
