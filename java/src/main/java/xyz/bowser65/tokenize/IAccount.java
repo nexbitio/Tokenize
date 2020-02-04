@@ -28,7 +28,7 @@ public interface IAccount {
     /**
      * Should return the ID of the account.
      */
-    String getId();
+    String getTokenId();
 
     /**
      * Should return the Tokenize timestamp since when tokens are valid.

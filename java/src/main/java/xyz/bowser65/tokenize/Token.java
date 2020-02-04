@@ -64,7 +64,7 @@ public class Token {
             token.append(this.prefix).append('.');
         }
         token.append(new String(
-                Base64.getEncoder().encode(this.account.getId().getBytes(StandardCharsets.UTF_8))
+                Base64.getEncoder().encode(this.account.getTokenId().getBytes(StandardCharsets.UTF_8))
         )).append('.').append(new String(
                 Base64.getEncoder().encode(String.valueOf(this.genTime).getBytes(StandardCharsets.UTF_8))
         ));

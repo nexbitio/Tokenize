@@ -18,17 +18,16 @@
 
 package xyz.bowser65.tokenize;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.swing.text.html.InlineView;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.Base64;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Tokenize main class
@@ -71,12 +70,15 @@ public class Tokenize {
      * Validates a token
      *
      * @param token          The token to validate
-     * @param accountFetcher A function used to get the account associated with an ID
-     * @return A {@link Token}, or null if no account is associated or if the token has been revoked
+     * @param accountFetcher An AccountFetcher instance that will be used to fetch
+     *                       an account with the associated ID string
+     * @return A {@link Token}, or null if no account is associated or if the token
+     *         has been revoked
      * @throws SignatureException If the token signature is invalid
      */
     @Nullable
-    public Token validateToken(@Nonnull final String token, @Nonnull Function<String, IAccount> accountFetcher) throws SignatureException {
+    public Token validateToken(@Nonnull final String token, @Nonnull AccountFetcher accountFetcher)
+            throws SignatureException {
         final String[] parts = token.split("\\.");
         String prefix, encodedAccount, encodedTime;
         boolean signatureValid;
@@ -103,12 +105,33 @@ public class Tokenize {
 
         final String accountId = new String(Base64.getDecoder().decode(encodedAccount));
         final long tokenTime = Long.parseLong(new String(Base64.getDecoder().decode(encodedTime)));
-        final IAccount account = accountFetcher.apply(accountId);
+        final IAccount account = accountFetcher.fetchAccount(accountId);
 
         if (account != null && tokenTime > account.tokensValidSince()) {
             return new Token(this, account, prefix, tokenTime);
         }
         return null;
+    }
+
+    /**
+     * Validates a token
+     *
+     * @param token     The token to validate
+     * @param fetchFunc A function used to get the account associated with an ID
+     * @return A {@link Token}, or null if no account is associated or if the token
+     *         has been revoked
+     * @throws SignatureException If the token signature is invalid
+     */
+    @Nonnull
+    public Token validateToken(@Nonnull final String token, @Nonnull Function<String, IAccount> fetchFunc)
+            throws SignatureException {
+        return validateToken(token, new AccountFetcher() {
+
+            @Override
+            public IAccount fetchAccount(String id) {
+                return fetchFunc.apply(id);
+            }
+        });
     }
 
     /**
