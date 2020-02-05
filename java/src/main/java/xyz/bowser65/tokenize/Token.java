@@ -27,7 +27,7 @@ import java.util.Base64;
  * Represents a Tokenize token
  *
  * @author Bowser65
- * @since 31/02/20
+ * @since 31/01/20
  */
 public class Token {
     private final Tokenize tokenize;
@@ -48,7 +48,7 @@ public class Token {
     }
 
     Token(@Nonnull final Tokenize tokenize, @Nonnull final IAccount account, @Nullable final String prefix,
-            final long genTime) {
+          final long genTime) {
         this.tokenize = tokenize;
         this.account = account;
         this.prefix = prefix;
@@ -71,7 +71,7 @@ public class Token {
         token.append(new String(rawId, 0, rawId.length, StandardCharsets.UTF_8));
         token.append('.');
         token.append(new String(rawTime, 0, rawTime.length, StandardCharsets.UTF_8));
-        
+
         final String toSign = token.toString();
         token.append('.').append(tokenize.computeHmac(toSign));
         return token.toString();
@@ -118,5 +118,12 @@ public class Token {
      */
     public long getGenTime() {
         return genTime;
+    }
+
+    /**
+     * @return The token age in seconds
+     */
+    public long getAge() {
+        return genTime - Tokenize.TOKENIZE_EPOCH / 1000;
     }
 }

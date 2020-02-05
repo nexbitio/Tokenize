@@ -18,16 +18,14 @@
 
 package xyz.bowser65.tokenize;
 
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.util.Base64;
-import java.util.function.Function;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.util.Base64;
 
 /**
  * Tokenize main class
@@ -43,7 +41,7 @@ public class Tokenize {
     public static final int VERSION = 1;
 
     /**
-     * First second of 2019, used to get shorter tokens.
+     * First millisecond of 2019, used to get shorter tokens.
      */
     public static final long TOKENIZE_EPOCH = 1546300800000L;
 
