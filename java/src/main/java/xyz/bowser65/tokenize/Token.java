@@ -64,12 +64,14 @@ public class Token {
         if (this.prefix != null) {
             token.append(this.prefix).append('.');
         }
-        
+
         final byte[] rawId = Base64.getEncoder().encode(this.account.getTokenId().getBytes(StandardCharsets.UTF_8)),
                 rawTime = Base64.getEncoder().encode(String.valueOf(this.genTime).getBytes(StandardCharsets.UTF_8));
 
-        token.append(new String(rawId, 0, rawTime.length, StandardCharsets.UTF_8)).append('.')
-                .append(new String(rawTime, 0, rawTime.length, StandardCharsets.UTF_8));
+        token.append(new String(rawId, 0, rawId.length, StandardCharsets.UTF_8));
+        token.append('.');
+        token.append(new String(rawTime, 0, rawTime.length, StandardCharsets.UTF_8));
+        
         final String toSign = token.toString();
         token.append('.').append(tokenize.computeHmac(toSign));
         return token.toString();
