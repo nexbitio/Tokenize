@@ -103,8 +103,10 @@ public class Tokenize {
             throw new SignatureException("Invalid signature");
         }
 
-        final String accountId = new String(Base64.getDecoder().decode(encodedAccount));
-        final long tokenTime = Long.parseLong(new String(Base64.getDecoder().decode(encodedTime)));
+        final String accountId = new String(
+                Base64.getDecoder().decode(encodedAccount.getBytes(StandardCharsets.UTF_8)));
+        final long tokenTime = Long
+                .parseLong(new String(Base64.getDecoder().decode(encodedTime.getBytes(StandardCharsets.UTF_8))));
         final IAccount account = accountFetcher.fetchAccount(accountId);
 
         if (account != null && tokenTime > account.tokensValidSince()) {
