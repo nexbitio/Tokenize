@@ -47,7 +47,8 @@ public class Token {
         this(tokenize, account, null, genTime);
     }
 
-    Token(@Nonnull final Tokenize tokenize, @Nonnull final IAccount account, @Nullable final String prefix, final long genTime) {
+    Token(@Nonnull final Tokenize tokenize, @Nonnull final IAccount account, @Nullable final String prefix,
+            final long genTime) {
         this.tokenize = tokenize;
         this.account = account;
         this.prefix = prefix;
@@ -63,11 +64,12 @@ public class Token {
         if (this.prefix != null) {
             token.append(this.prefix).append('.');
         }
-        token.append(new String(
-                Base64.getEncoder().encode(this.account.getTokenId().getBytes(StandardCharsets.UTF_8))
-        )).append('.').append(new String(
-                Base64.getEncoder().encode(String.valueOf(this.genTime).getBytes(StandardCharsets.UTF_8))
-        ));
+        
+        final byte[] rawId = Base64.getEncoder().encode(this.account.getTokenId().getBytes(StandardCharsets.UTF_8)),
+                rawTime = Base64.getEncoder().encode(String.valueOf(this.genTime).getBytes(StandardCharsets.UTF_8));
+
+        token.append(new String(rawId, 0, rawTime.length, StandardCharsets.UTF_8)).append('.')
+                .append(new String(rawTime, 0, rawTime.length, StandardCharsets.UTF_8));
         final String toSign = token.toString();
         token.append('.').append(tokenize.computeHmac(toSign));
         return token.toString();
