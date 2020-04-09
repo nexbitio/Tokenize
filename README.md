@@ -7,7 +7,7 @@ flow.
 ## Supported languages
 You can get installation procedure for each language in the README.md of their folder.
 
-| Language | Minimum anguage version | Token generation & validation | OTP validation |
+| Language | Minimum language version | Token generation & validation | OTP validation |
 |---|---|:---:|:---:|
 | NodeJS | 10 | x | x |
 | Java | 1.8 | x | Soon™️ |
