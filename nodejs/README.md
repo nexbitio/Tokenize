@@ -1,13 +1,23 @@
 # Tokenize for Node.js
 
+# NOTE:
+This implementation is out of date. You shouldn't use it in a production application.
+
+---------------------
+
 ## Installation
 ```
+With PNPM:
+pnpm i js-tokenize
+
+With Yarn:
 yarn add js-tokenize
+
+With NPM:
 npm i js-tokenize
 ```
 
 ## How to use it
-
 ### Generation
 ```js
 import Tokenize from 'js-tokenize'
@@ -34,4 +44,11 @@ const fetchAccount = () => ({ tokensValidSince: 0, hasMfa: false })
 
 // Returns a boolean, true if valid false otherwise
 console.log(tokenize.validate(token, fetchAccount))
-`````
+```
+
+## TODO
+Update impl
+Rewrite using TypeScript
+
+# License
+Like all Tokenize implementation, this implementation is released under the BSD-3-Clause license.

@@ -1,23 +1,33 @@
 # Tokenize
-[![Build Status](https://img.shields.io/travis/Bowser65/Tokenize/master.svg?style=flat-square&logo=travis)](https://travis-ci.org/Bowser65/Tokenize)
 [![License](https://img.shields.io/github/license/Bowser65/Tokenize.svg?style=flat-square)](https://github.com/Bowser65/Tokenize/blob/master/LICENSE)
-[![Donate](https://img.shields.io/badge/donate-Patreon-F96854.svg?style=flat-square)](https://www.patreon.com/Bowser65)
 
 An universal and secure token generator for authentication. Available in multiple languages, supports 2FA authentication
 flow.
 
-Tokenize is available in Java (1.8+), NodeJS (10+), Golang, Elixir, Python and PHP (7.2+), and is proudly built without
-any dependency 🎉
+## Supported languages
+You can get installation procedure for each language in the README.md of their folder.
 
-You can get installation procedure for each language in the README.md of their folder
+| Language | Minimum anguage version | Token generation & validation | OTP validation |
+|---|---|:---:|:---:|
+| NodeJS | 10 | x | x |
+| Java | 1.8 | x | Soon™️ |
+| C++ | 17 | Soon™️ | Soon™️ |
+
+Want to see more languages supported? File an issue, or if you're even more epic send a PR!
 
 ## Format
 Tokenize token format (TTF, not to be confused with TrueType Font :^)) is inspired from the [JWT](https://jwt.io/)
-standard. It's capable to generate multiple valid tokens, but unlike JWT tokens invalidate them all at once.
+standard. It's capable to generate multiple valid tokens, and unlike with JWT tokens, you can invalidate all tokens for
+an account all at once.
 
-One downside of TTF is that you need to fetch database each time to validate a token, while JWT aims to provide a
-stateful token. TTF only includes the account ID, the token generation time and if the token has been generated after
-a successful 2FA flow or not.
+### Limitations
+ - You can't invalidate a specific token
+Yes you can still do it within your app, but that's not something Tokenize does support.
+ - You must ping the database everytime
+This is due to the invalidation part, however you can still build a cache and serve cached results to Tokenize.
+ - One TOTP code is only valid once
+This is more of a security feature than a limitation. This behaviour is in place to prevent replay attacks with the same
+TOTP code.
 
 ### What does it look like
 ```
@@ -25,14 +35,14 @@ xxxxxx.OTQ3NjI0OTI5MjM3NDgzNTI.MTc4MzkxODI.dGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNpZ25hd
 ------ ----------------------- ----------- -------------------------------------------------
 Prefix       Account ID         Gen. Date              HMAC SHA256 Signature
 
- - All parts are base64 encoded, except the prefix
- - The signature is based on everything that preceeds it and a prefix "TTF.{version_number}"
+ - All parts are base64 encoded, except the prefix.
+ - Prefix can contain arbitrary data. You can pass virtually anything in this.
+ - The signature is based on everything that preceeds it and a prefix "TTF.{version_number}".
 ```
 
 ### How to use it
-**Note**: While it's simple to make an universal token format, an universal lib format is a bit more hard, so
-implementation may vary a bit depending on the language. We use NodeJS in the following examples, but there are
-examples written for each language in their repository.
+**Note**: The following examples uses the NodeJS lib, as I (Bowser65) am more comfortable with this language. There are
+language-specific examples for each Tokenize implementation in their respective directory.
 
 #### Generation
 ```js
@@ -61,6 +71,3 @@ const fetchAccount = () => ({ tokensValidSince: 0, hasMfa: false })
 // Returns a boolean, true if valid false otherwise
 console.log(tokenize.validate(token, fetchAccount))
 ```
-
-## Acknowledgements
-Thanks to [AlexFlipnote](https://github.com/AlexFlipnote) for maintaining the Python version of Tokenize <3
