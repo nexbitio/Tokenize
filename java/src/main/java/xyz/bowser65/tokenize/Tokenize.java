@@ -26,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Tokenize main class
@@ -33,7 +35,7 @@ import java.util.Base64;
  * @author Bowser65
  * @since 10/08/19
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class Tokenize {
     /**
      * Tokenize Token Format version.
@@ -65,56 +67,75 @@ public class Tokenize {
     }
 
     /**
-     * Validates a token
+     * Validates a token synchronously.
      *
-     * @param token          The token to validate
-     * @param accountFetcher An AccountFetcher instance that will be used to fetch
-     *                       an account with the associated ID string
-     * @return A {@link Token}, or null if no account is associated or if the token
-     *         has been revoked
-     * @throws SignatureException If the token signature is invalid
+     * @param token          The token to validate.
+     * @param accountFetcher The account fetcher used to retrieve the account.
+     * @return The token, or {@code null} if there is no account associated or if the token has been revoked.
+     * @throws SignatureException If the token signature is invalid.
      */
     @Nullable
-    public Token validateToken(@Nonnull final String token, @Nonnull AccountFetcher accountFetcher)
-            throws SignatureException {
-        final String[] parts = token.split("\\.");
-        String prefix, encodedAccount, encodedTime;
-        boolean signatureValid;
+    public Token validateToken(@Nonnull final String token, @Nonnull AccountFetcher accountFetcher) throws SignatureException {
+        final String[] parts = parseToken(token);
+        final long tokenTime = Long.parseLong(parts[2]);
+        final IAccount account = accountFetcher.fetchAccount(parts[1]);
+        if (account != null && tokenTime > account.tokensValidSince()) {
+            return new Token(this, account, parts[0], tokenTime);
+        }
+        return null;
+    }
 
+    /**
+     * Validates a token asynchronously.
+     *
+     * @param token          The token to validate.
+     * @param accountFetcher The account fetcher used to retrieve the account.
+     * @return A {@link CompletionStage}.
+     * @throws SignatureException If the token signature is invalid.
+     */
+    @Nullable
+    public CompletionStage<Token> validateToken(@Nonnull final String token, @Nonnull AsyncAccountFetcher accountFetcher) throws SignatureException {
+        final CompletableFuture<Token> future = new CompletableFuture<>();
+        final String[] parts = parseToken(token);
+        final long tokenTime = Long.parseLong(parts[2]);
+        accountFetcher.fetchAccount(parts[1]).thenAccept(account -> {
+            if (account != null && tokenTime > account.tokensValidSince()) {
+                future.complete(new Token(this, account, parts[0], tokenTime));
+            }
+            future.complete(null);
+        });
+        return future;
+    }
+
+    private String[] parseToken(@Nonnull final String token) throws SignatureException {
+        final String[] parts = token.split("\\.");
+        String[] parsed = new String[4];
         if (parts.length != 3 && parts.length != 4) {
             throw new IllegalArgumentException("Invalid token: expected 3 or 4 parts, got " + parts.length);
         }
 
+        int index = 0;
+        boolean signatureValid;
         if (parts.length == 4) {
-            prefix = parts[0];
-            encodedAccount = parts[1];
-            encodedTime = parts[2];
-            signatureValid = computeHmac(prefix + '.' + encodedAccount + '.' + encodedTime).equals(parts[3]);
+            signatureValid = computeHmac(parts[0] + '.' + parts[1] + '.' + parts[2]).equals(parts[3]);
+            parsed[0] = parts[0];
+            index++;
         } else {
-            prefix = null;
-            encodedAccount = parts[0];
-            encodedTime = parts[1];
-            signatureValid = computeHmac(encodedAccount + '.' + encodedTime).equals(parts[2]);
+            signatureValid = computeHmac(parts[0] + '.' + parts[1]).equals(parts[2]);
+            parsed[0] = null;
         }
 
         if (!signatureValid) {
             throw new SignatureException("Invalid signature");
         }
 
-        final String accountId = new String(
-                Base64.getDecoder().decode(encodedAccount.getBytes(StandardCharsets.UTF_8)));
-        final long tokenTime = Long
-                .parseLong(new String(Base64.getDecoder().decode(encodedTime.getBytes(StandardCharsets.UTF_8))));
-        final IAccount account = accountFetcher.fetchAccount(accountId);
-
-        if (account != null && tokenTime > account.tokensValidSince()) {
-            return new Token(this, account, prefix, tokenTime);
-        }
-        return null;
+        parsed[1] = new String(Base64.getDecoder().decode(parts[index].getBytes(StandardCharsets.UTF_8)));
+        parsed[2] = new String(Base64.getDecoder().decode(parts[1 + index].getBytes(StandardCharsets.UTF_8)));
+        return parsed;
     }
 
     /**
-     * @return Current token time based on the Tokenize Epoch
+     * @return Current token time based on the Tokenize Epoch.
      */
     public static long currentTokenTime() {
         return (System.currentTimeMillis() - TOKENIZE_EPOCH) / 1000;

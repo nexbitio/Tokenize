@@ -29,6 +29,7 @@ import java.util.Base64;
  * @author Bowser65
  * @since 31/01/20
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class Token {
     private final Tokenize tokenize;
     private final IAccount account;
@@ -47,8 +48,7 @@ public class Token {
         this(tokenize, account, null, genTime);
     }
 
-    Token(@Nonnull final Tokenize tokenize, @Nonnull final IAccount account, @Nullable final String prefix,
-          final long genTime) {
+    Token(@Nonnull final Tokenize tokenize, @Nonnull final IAccount account, @Nullable final String prefix, final long genTime) {
         this.tokenize = tokenize;
         this.account = account;
         this.prefix = prefix;
