@@ -8,7 +8,7 @@ flow.
 You can get installation procedure for each language in the README.md of their folder.
 
 | Language | Minimum language version | Token generation | Token validation | OTP validation |
-|---|---|:---:|:---:|
+|---|---|---|:---:|:---:|
 | NodeJS | 10 | x | x | x |
 | Java | 1.8 | x | x | x |
 
