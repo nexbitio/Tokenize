@@ -7,11 +7,10 @@ flow.
 ## Supported languages
 You can get installation procedure for each language in the README.md of their folder.
 
-| Language | Minimum language version | Token generation & validation | OTP validation |
+| Language | Minimum language version | Token generation | Token validation | OTP validation |
 |---|---|:---:|:---:|
-| NodeJS | 10 | x | x |
-| Java | 1.8 | x | Soon™️ |
-| C++ | 17 | Soon™️ | Soon™️ |
+| NodeJS | 10 | x | x | x |
+| Java | 1.8 | x | x | x |
 
 Want to see more languages supported? File an issue, or if you're even more epic send a PR!
 
@@ -25,9 +24,9 @@ an account all at once.
 Yes you can still do it within your app, but that's not something Tokenize does support.
  - You must ping the database everytime
 This is due to the invalidation part, however you can still build a cache and serve cached results to Tokenize.
- - One TOTP code is only valid once
+ - An OTP code is only valid once
 This is more of a security feature than a limitation. This behaviour is in place to prevent replay attacks with the same
-TOTP code.
+OTP code.
 
 ### What does it look like
 ```

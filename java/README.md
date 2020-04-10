@@ -44,7 +44,13 @@ public class Main {
             System.out.println("Invalid token signature!");
         }
 
-        // TOTP (soon)
+        // Get an OTP key
+        // Note: You only need to store the base32 key in your database.
+        final OTPKey key = OTPKey.builder().name("Key Name").issuer("Issuer name").build();
+
+        // Validate an OTP code
+        System.out.println(OTPUtils.validateTotp("013370", "xxxxxxxxxxxxxxxx"));
+        System.out.println(OTPUtils.validateHotp("013370", "xxxxxxxxxxxxxxxx", 1));
     }
 }
 ```

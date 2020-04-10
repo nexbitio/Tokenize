@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.Base64;
@@ -159,9 +160,9 @@ public class Tokenize {
             final byte[] data = hmac.doFinal(("TTF." + VERSION + "." + string).getBytes(StandardCharsets.UTF_8));
             return new String(Base64.getEncoder().encode(data)).replace("=", "");
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Tokenize is unable to function if HmacSHA256 algorithm isn't present!");
-        } catch (Throwable e) {
-            throw new RuntimeException("is this ever reachable?");
+            throw new RuntimeException("Tokenize is unable to function if HmacSHA256 algorithm isn't present!", e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException("is this ever reachable?", e);
         }
     }
 }

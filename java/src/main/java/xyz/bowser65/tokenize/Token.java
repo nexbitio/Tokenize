@@ -27,6 +27,8 @@
 
 package xyz.bowser65.tokenize;
 
+import lombok.Getter;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
@@ -41,8 +43,11 @@ import java.util.Base64;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class Token {
     private final Tokenize tokenize;
+    @Getter
     private final IAccount account;
+    @Getter
     private String prefix;
+    @Getter
     private long genTime;
 
     Token(@Nonnull final Tokenize tokenize, @Nonnull final IAccount account) {
@@ -104,29 +109,6 @@ public class Token {
         }
         this.prefix = prefix;
         this.genTime = Tokenize.currentTokenTime();
-    }
-
-    /**
-     * @return The account this token is valid for
-     */
-    @Nonnull
-    public IAccount getAccount() {
-        return account;
-    }
-
-    /**
-     * @return The prefix associated with the token
-     */
-    @Nullable
-    public String getPrefix() {
-        return prefix;
-    }
-
-    /**
-     * @return The token time in seconds relative to the Tokenize Epoch
-     */
-    public long getGenTime() {
-        return genTime;
     }
 
     /**
