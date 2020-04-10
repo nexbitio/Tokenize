@@ -25,7 +25,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { createHmac, randomBytes } from 'crypto'
+import { createHmac } from 'crypto'
 import Base32 from './base32'
 
 /**
@@ -34,13 +34,6 @@ import Base32 from './base32'
  * @since 27/07/19
  */
 class OTP {
-  /**
-   * Set used in key generation
-   * @type {String}
-   * @private
-   */
-  _set = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz!@#$%^&*()<>?/[]{},.:;'
-
   /**
    * Used MFA tokens, mapped per secret key
    * @type {object}
@@ -67,27 +60,27 @@ class OTP {
   }
 
   generateKey (name = 'Secret Key', issuer = null, hotp = false) {
-    const bytes = randomBytes(32)
-    const string = Array(32)
-      .fill(i => this._set[Math.floor(bytes[i] / 255.0 * (this._set.length - 1))])
-      .map((f, i) => f(i))
-      .join('')
-
-    const key = {
-      raw: string,
-      base32: Base32.encode(string)
-    }
-
-    return Object.defineProperty(key, {
-      value: 'google_url',
+    const base32 = this._randomBase32()
+    const key = { base32 }
+    return Object.defineProperty(key, 'google_url', {
       writable: false,
-      get: () => `otpauth://${hotp ? 'h' : 't'}otp/${name}?secret=${this.base32}${issuer ? `&issuer=${issuer}` : ''}`
+      value: {
+        get: () => `otpauth://${hotp ? 'h' : 't'}otp/${name}?secret=${base32}${issuer ? `&issuer=${issuer}` : ''}`
+      }
     })
+  }
+
+  _randomBase32 () {
+    let result = ''
+    for (let i = 0; i < 16; i++) {
+      result += Base32.alphabet[Math.floor(Math.random() * Base32.alphabet.length)]
+    }
+    return result
   }
 
   _computeHotp (secret, counter) {
     // Compute digest
-    secret = Base32.decode(secret)
+    secret = Buffer.from(Base32.decode(secret), 'binary')
 
     let tmp = counter
     const buf = Buffer.alloc(8)

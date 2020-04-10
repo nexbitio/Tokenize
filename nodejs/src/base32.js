@@ -26,78 +26,70 @@
  */
 
 /**
+ * NOTE: This class is PARTIALLY compliant with RFC 4648 and only implements required Base32 operations for OTP secrets.
  * @class Base32
  * @author Bowser65
  * @since 27/07/19
  */
 class Base32 {
-  static alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-
-  static charmap = null
-
-  static encode (data) {
-    let encoded = ''
-    let shift = 3
-    let carry = 0
-    let symbol
-    let byte
-
-    // encode each byte in buf
-    for (let i = 0; i < data.length; i++) {
-      byte = data[i]
-      symbol = carry | (byte >> shift)
-      encoded += Base32.alphabet[symbol & 0x1f]
-
-      if (shift > 5) {
-        shift -= 5
-        symbol = byte >> shift
-        encoded += Base32.alphabet[symbol & 0x1f]
-      }
-
-      shift = 5 - shift
-      carry = byte << shift
-      shift = 8 - shift
-    }
-
-    if (shift !== 3) encoded += Base32.alphabet[carry & 0x1f]
-    return encoded
+  static charMap = {
+    /* eslint-disable object-property-newline */
+    A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6, H: 7, I: 8,
+    J: 9, K: 10, L: 11, M: 12, N: 13, O: 14, P: 15, Q: 16,
+    R: 17, S: 18, T: 19, U: 20, V: 21, W: 22, X: 23, Y: 24,
+    Z: 25, 2: 26, 3: 27, 4: 28, 5: 29, 6: 30, 7: 31
+    /* eslint-enable object-property-newline */
   }
 
-  static decode (data) {
-    Base32._charmap()
-    const buf = []
-    let shift = 8
-    let carry = 0
+  static alphabet = Object.keys(Base32.charMap)
 
-    // decode string
-    data.toUpperCase().split('').forEach((char) => {
-      if (char === '') return
-      const symbol = Base32.charmap[char] & 0xff
+  // Inspired from https://github.com/emn178/hi-base32.
+  static decode (base32) {
+    let i, b1, b2, b3, b4, b5, b6, b7, b8
+    let str = ''
+    const count = base32.length >> 3 << 3
 
-      shift -= 5
-      if (shift > 0) {
-        carry |= symbol << shift
-      } else if (shift < 0) {
-        buf.push(carry | (symbol >> -shift))
-        shift += 8
-        carry = (symbol << shift) & 0xff
-      } else {
-        buf.push(carry | symbol)
-        shift = 8
-        carry = 0
-      }
-    })
-
-    if (shift !== 8 && carry !== 0) buf.push(carry)
-    return Buffer.from(buf)
-  }
-
-  static _charmap () {
-    if (!Base32.charmap) {
-      const mappings = { 0: 14, 1: 8 }
-      Base32.alphabet.split('').forEach((c, i) => { if (!(c in mappings)) mappings[c] = i })
-      Base32.charmap = mappings
+    for (i = 0; i < count;) {
+      [ b1, b2, b3, b4, b5, b6, b7, b8 ] = Array(8).fill(null).map(() => Base32.charMap[base32.charAt(i++)])
+      str += String.fromCharCode((b1 << 3 | b2 >>> 2) & 255) +
+        String.fromCharCode((b2 << 6 | b3 << 1 | b4 >>> 4) & 255) +
+        String.fromCharCode((b4 << 4 | b5 >>> 1) & 255) +
+        String.fromCharCode((b5 << 7 | b6 << 2 | b7 >>> 3) & 255) +
+        String.fromCharCode((b7 << 5 | b8) & 255)
     }
+
+    const remain = base32.length - count
+    /* eslint-disable no-duplicate-case */
+    // noinspection JSDuplicateCaseLabel
+    switch (remain) {
+      case 2:
+      case 4:
+      case 5:
+      case 7:
+        b1 = Base32.charMap[base32.charAt(i++)]
+        b2 = Base32.charMap[base32.charAt(i++)]
+        str += String.fromCharCode((b1 << 3 | b2 >>> 2) & 255)
+        break
+      case 4:
+      case 5:
+      case 7:
+        b3 = Base32.charMap[base32.charAt(i++)]
+        b4 = Base32.charMap[base32.charAt(i++)]
+        str += String.fromCharCode((b2 << 6 | b3 << 1 | b4 >>> 4) & 255)
+        break
+      case 5:
+      case 7:
+        b5 = Base32.charMap[base32.charAt(i++)]
+        str += String.fromCharCode((b4 << 4 | b5 >>> 1) & 255)
+        break
+      case 7:
+        b6 = Base32.charMap[base32.charAt(i++)]
+        b7 = Base32.charMap[base32.charAt(i++)]
+        str += String.fromCharCode((b5 << 7 | b6 << 2 | b7 >>> 3) & 255)
+        break
+    }
+    /* eslint-enable no-duplicate-case */
+    return str
   }
 }
 
