@@ -20,11 +20,11 @@ standard. It's capable to generate multiple valid tokens, and unlike with JWT to
 an account all at once.
 
 ### Limitations
- - You can't invalidate a specific token
+ - You can't invalidate a specific token<br>
 Yes you can still do it within your app, but that's not something Tokenize does support.
- - You must ping the database everytime
+ - You must ping the database everytime<br>
 This is due to the invalidation part, however you can still build a cache and serve cached results to Tokenize.
- - An OTP code is only valid once
+ - An OTP code is only valid once<br>
 This is more of a security feature than a limitation. This behaviour is in place to prevent replay attacks with the same
 OTP code.
 
