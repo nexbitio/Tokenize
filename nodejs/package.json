@@ -1,12 +1,13 @@
 {
   "name": "js-tokenize",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A universal and secure token generator for authentication. Available in multiple languages, supports 2FA authentication flow.",
   "main": "build/index.js",
   "repository": "https://github.com/Bowser65/Tokenize",
   "author": "Bowser65 <bowoser@weeb.services>",
-  "license": "AGPL-3.0",
+  "license": "BSD-3-Clause",
   "scripts": {
+    "test": "jest",
     "lint": "eslint --ext js --ext jsx src",
     "build": "babel src -d build --copy-files",
     "jsdoc": "jsdoc -c .jsdoc.json -R ./README.md"
@@ -24,6 +25,7 @@
     "@babel/runtime": "^7.9.2",
     "@babel/types": "^7.9.5",
     "babel-eslint": "^10.1.0",
+    "babel-jest": "^25.3.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",

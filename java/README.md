@@ -25,7 +25,6 @@ With Maven:
 ```
 
 ## How to use it
-
 ```java
 public class Main {
     public static void main(final String[] args) {
@@ -34,7 +33,7 @@ public class Main {
         // Generation
         final Token token = tokenize.generateToken(account);
         System.out.println(token); // xxxxxxxx.xxxxxxxxxxx.xxxxxxxxx
-    
+
         // Validation
         String rawToken = "xxxxxxxx.xxxxxxxxxxx.xxxxxxxxx";
         Token token;
@@ -45,8 +44,9 @@ public class Main {
         }
 
         // Get an OTP key
-        // Note: You only need to store the base32 key in your database.
         final OTPKey key = OTPKey.builder().name("Key Name").issuer("Issuer name").build();
+        System.out.println(key.getKey()); // You just need to store this in your database
+        System.out.println(key.getGoogleURI()); // Throw this in a QR code
 
         // Validate an OTP code
         System.out.println(OTPUtils.validateTotp("013370", "xxxxxxxxxxxxxxxx"));
@@ -54,3 +54,6 @@ public class Main {
     }
 }
 ```
+
+## License
+Like all Tokenize implementation, this implementation is released under the BSD-3-Clause license.

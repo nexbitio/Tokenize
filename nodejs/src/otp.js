@@ -29,40 +29,72 @@ import { createHmac } from 'crypto'
 import Base32 from './base32'
 
 /**
+ * @typedef OTPKey
+ * @property base32 {String} Base32 secret
+ * @property googleURI {String} Google Authenticator compliant URI
+ */
+
+/**
  * @class OTP
  * @author Bowser65
  * @since 27/07/19
  */
 class OTP {
   /**
-   * Used MFA tokens, mapped per secret key
+   * Used tokens, mapped per secret key
    * @type {object}
+   * @static
    * @private
    */
-  _usedMfa = {}
+  static _usedCodes = {}
 
-  validateHotp (token, secret, counter) {
-    if (!this._usedMfa[secret]) this._usedMfa[secret] = []
-    if (this._usedMfa[secret].includes(token)) return false
+  /**
+   * Validates a HTOP token
+   *
+   * @param token {String} Token the user gave
+   * @param secret {String} Base32 secret
+   * @param counter {Number} Counter
+   * @returns {Boolean} Whether the token is valid or not
+   * @static
+   */
+  static validateHotp (token, secret, counter) {
+    if (!this._usedCodes[secret]) this._usedCodes[secret] = []
+    if (this._usedCodes[secret].includes(token)) return false
 
     const counterInt = parseInt(counter, 10) || 0
     if (!secret || !token || token.length !== 6 || isNaN(parseInt(token, 10))) return false
 
     if (this._computeHotp(secret, counterInt) === token) {
-      this._usedMfa[secret].push(token)
+      this._usedCodes[secret].push(token)
       return true
     }
     return false
   }
 
-  validateTotp (token, secret) {
+  /**
+   * Validates a TOTP token
+   *
+   * @param token {String} Token the user gave
+   * @param secret {String} Base32 secret
+   * @returns {Boolean} Whether the token is valid or not
+   * @static
+   */
+  static validateTotp (token, secret) {
     return this.validateHotp(token, secret, Math.floor(Date.now() / 30 / 1000))
   }
 
-  generateKey (name = 'Secret Key', issuer = null, hotp = false) {
+  /**
+   * Generates an OTP key
+   *
+   * @param name {String} Name of the key
+   * @param issuer {String} Name of the issuer
+   * @param hotp {Boolean} If set to true, generates a HTOP key instead of a TOTP key
+   * @returns {OTPKey}
+   */
+  static generateKey (name = 'Secret Key', issuer = null, hotp = false) {
     const base32 = this._randomBase32()
     const key = { base32 }
-    return Object.defineProperty(key, 'google_url', {
+    return Object.defineProperty(key, 'googleURI', {
       writable: false,
       value: {
         get: () => `otpauth://${hotp ? 'h' : 't'}otp/${name}?secret=${base32}${issuer ? `&issuer=${issuer}` : ''}`
@@ -70,7 +102,7 @@ class OTP {
     })
   }
 
-  _randomBase32 () {
+  static _randomBase32 () {
     let result = ''
     for (let i = 0; i < 16; i++) {
       result += Base32.alphabet[Math.floor(Math.random() * Base32.alphabet.length)]
@@ -78,7 +110,7 @@ class OTP {
     return result
   }
 
-  _computeHotp (secret, counter) {
+  static _computeHotp (secret, counter) {
     // Compute digest
     secret = Buffer.from(Base32.decode(secret), 'binary')
 

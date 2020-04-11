@@ -1,7 +1,10 @@
 # IntelliJ
 .idea
 *.iml
-target
+
+# Gradle
+.gradle
+
 
 # eclipse garbage
 /.classpath

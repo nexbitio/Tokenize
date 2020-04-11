@@ -6,6 +6,8 @@
     "node": true
   },
   "rules": {
+    "no-void": "off",
+    "no-undefined": "error",
     "prefer-const": "error",
     "prefer-destructuring": [
       "error",
@@ -18,9 +20,6 @@
           "array": true,
           "object": true
         }
-      },
-      {
-        "enforceForRenamedProperties": false
       }
     ],
     "prefer-template": "error",

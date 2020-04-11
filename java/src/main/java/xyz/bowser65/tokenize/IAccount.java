@@ -35,7 +35,7 @@ package xyz.bowser65.tokenize;
  */
 public interface IAccount {
     /**
-     * Should return the ID of the account.
+     * @return ID of the account that'll be used in the token.
      */
     String getTokenId();
 

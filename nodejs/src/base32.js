@@ -30,6 +30,7 @@
  * @class Base32
  * @author Bowser65
  * @since 27/07/19
+ * @private
  */
 class Base32 {
   static charMap = {
@@ -59,36 +60,25 @@ class Base32 {
     }
 
     const remain = base32.length - count
-    /* eslint-disable no-duplicate-case */
-    // noinspection JSDuplicateCaseLabel
-    switch (remain) {
-      case 2:
-      case 4:
-      case 5:
-      case 7:
-        b1 = Base32.charMap[base32.charAt(i++)]
-        b2 = Base32.charMap[base32.charAt(i++)]
-        str += String.fromCharCode((b1 << 3 | b2 >>> 2) & 255)
-        break
-      case 4:
-      case 5:
-      case 7:
-        b3 = Base32.charMap[base32.charAt(i++)]
-        b4 = Base32.charMap[base32.charAt(i++)]
-        str += String.fromCharCode((b2 << 6 | b3 << 1 | b4 >>> 4) & 255)
-        break
-      case 5:
-      case 7:
-        b5 = Base32.charMap[base32.charAt(i++)]
-        str += String.fromCharCode((b4 << 4 | b5 >>> 1) & 255)
-        break
-      case 7:
-        b6 = Base32.charMap[base32.charAt(i++)]
-        b7 = Base32.charMap[base32.charAt(i++)]
-        str += String.fromCharCode((b5 << 7 | b6 << 2 | b7 >>> 3) & 255)
-        break
+    if (remain === 2 || remain === 4 || remain === 5 || remain === 7) {
+      b1 = Base32.charMap[base32.charAt(i++)]
+      b2 = Base32.charMap[base32.charAt(i++)]
+      str += String.fromCharCode((b1 << 3 | b2 >>> 2) & 255)
     }
-    /* eslint-enable no-duplicate-case */
+    if (remain === 4 || remain === 5 || remain === 7) {
+      b3 = Base32.charMap[base32.charAt(i++)]
+      b4 = Base32.charMap[base32.charAt(i++)]
+      str += String.fromCharCode((b2 << 6 | b3 << 1 | b4 >>> 4) & 255)
+    }
+    if (remain === 5 || remain === 7) {
+      b5 = Base32.charMap[base32.charAt(i++)]
+      str += String.fromCharCode((b4 << 4 | b5 >>> 1) & 255)
+    }
+    if (remain === 7) {
+      b6 = Base32.charMap[base32.charAt(i++)]
+      b7 = Base32.charMap[base32.charAt(i++)]
+      str += String.fromCharCode((b5 << 7 | b6 << 2 | b7 >>> 3) & 255)
+    }
     return str
   }
 }

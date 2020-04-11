@@ -26,7 +26,6 @@
  */
 
 import { createHmac } from 'crypto'
-import OTP from './otp'
 
 /**
  * @class Tokenize
@@ -54,59 +53,31 @@ class Tokenize {
    */
   constructor (secret) {
     this._secret = secret
-    this._otp = new OTP()
   }
 
   /**
    * Generates a new token for a given account
    * @param {String} accountId The account id this token belongs to
+   * @param {String} prefix Optional prefix for the token
    * @return {String}
    */
-  generate (accountId) {
+  generate (accountId, prefix = null) {
     const accountPart = Buffer.from(accountId).toString('base64')
     const timePart = Buffer.from(this.currentTokenTime().toString()).toString('base64')
-    const token = `${accountPart}.${timePart}`.replace(/=/g, '')
+    const token = `${prefix ? `${prefix}.` : ''}${accountPart}.${timePart}`.replace(/=/g, '')
     const signature = this._computeHmac(token)
     return `${token}.${signature}`
-  }
-
-  /**
-   * Upgrades a non-mfa token to a mfa token.
-   * Validation of the mfa code is automatically handled by the library. Tokenize doesn't allow usage of the same
-   * token twice to enhance user's security (MITM or replay attacks)
-   * @param {String} token Non-mfa token (NOTE: Validity won't be checked!)
-   * @param {String} mfa User-provided 6 digit code
-   * @param {String} secret MFA secret bound to the user
-   * @param {Number} counter If null Tokenize will perform a TOTP check, HOTP check otherwise
-   * @return {String} The upgraded token, or null if the MFA code is invalid
-   */
-  upgrade (token, mfa, secret, counter = null) {
-    if (
-      !token.startsWith('mfa.') && (
-        (counter === null && this._otp.validateTotp(mfa, secret)) ||
-        (counter !== null && this._otp.validateHotp(mfa, secret, counter))
-      )
-    ) {
-      const parts = token.split('.')
-      const upgraded = `mfa.${parts[0]}.${parts[1]}`
-      const signature = this._computeHmac(upgraded)
-      return `${upgraded}.${signature}`
-    }
-    return null
   }
 
   /**
    * Validates a token
    * @param {String} token The provided token
    * @param {Function} accountFetcher The function used to fetch the account. It'll receive the account id as a string
-   *                                  and should return an object with 'tokensValidSince' and 'hasMfa' fields.
-   *                                  It'll be returned if the token is valid.
-   * @param {Boolean} ignoreMfa Whether or not MFA check should be performed. If true, only non-mfa tokens will be
-   *                            accepted. Can be used to make "ticket tokens", where the user entered correct
-   *                            credentials but didn't performed MFA check
-   * @return {object|null} The account if the token is valid, null otherwise.
+   * and should return an object with 'tokensValidSince' field. It'll be returned if the token is valid.
+   * @return {Promise<object|null>|object|null} The account if the token is valid, null otherwise. A promise will be
+   * returned only if account fetcher returns a promise.
    */
-  validate (token, accountFetcher, ignoreMfa) {
+  validate (token, accountFetcher) {
     const isMfa = token.startsWith('mfa.')
     const splitted = token.replace(/^mfa\./, '').split('.')
     if (splitted.length !== 3) return false
@@ -116,9 +87,14 @@ class Tokenize {
 
     const accountId = Buffer.from(splitted[0], 'base64').toString('utf8')
     const genTime = Buffer.from(splitted[1], 'base64').toString('utf8')
-    const accountDetails = accountFetcher(accountId)
-
-    return genTime > accountDetails.tokensValidSince && (!ignoreMfa && isMfa) === accountDetails.hasMfa ? accountDetails : null
+    const account = accountFetcher(accountId)
+    if (account instanceof Promise) {
+      return new Promise(resolve =>
+        account.then(account => resolve(genTime > account.tokensValidSince ? account : null))
+      )
+    } else {
+      return genTime > account.tokensValidSince ? account : null
+    }
   }
 
   /**

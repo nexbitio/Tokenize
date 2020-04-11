@@ -1,10 +1,5 @@
 # Tokenize for Node.js
 
-# NOTE:
-This implementation is out of date. You shouldn't use it in a production application.
-
----------------------
-
 ## Installation
 ```
 With PNPM:
@@ -18,37 +13,29 @@ npm i js-tokenize
 ```
 
 ## How to use it
-### Generation
 ```js
 import Tokenize from 'js-tokenize'
-const tokenize = new Tokenize('Very strong and secure secret')
-// Generate a non-mfa token
-console.log(tokenize.generate('account_id'))
-// Generate a mfa token (Will check the validity of the 2FA code automatically)
-// Returns null if the upgrade failed (aka invalid mfa code)
-console.log(tokenize.upgrade('non-mfa token', 'mfa_code', 'mfa_key'))
-```
+import OTP from 'js-tokenize/otp'
 
-### Validation
-The object returned by our function must have "tokensValidSince" and "hasMfa" fields. Those are used to validate the
-gen. date part and the mfa. prefix of the token
-
-```js
-import Tokenize from 'js-tokenize'
 const tokenize = new Tokenize('Very strong and secure secret')
 
-// Fetch account from db
-// "tokensValidSince" value should be stored in db and computed using tokenize.currentTokenTime()
-// the field should be updated when the password changes or when MFA is enabled/disabled
-const fetchAccount = () => ({ tokensValidSince: 0, hasMfa: false })
+console.log(tokenize.generate('account_id')) // xxxxxxxx.xxxxxxxxxxx.xxxxxxxxx
+console.log(tokenize.generate('account_id', 'prefix')) // prefix.xxxxxxxx.xxxxxxxxxxx.xxxxxxxxx
 
-// Returns a boolean, true if valid false otherwise
-console.log(tokenize.validate(token, fetchAccount))
+// Returns the account, or null if the token is invalid
+console.log(tokenize.validate('xxxxxxxx.xxxxxxxxxxx.xxxxxxxxx', () => ({ tokensValidSince: 0 })))
+
+// Get an OTP key
+console.log(OTP.generateKey()) // You just need to save the base32 key in database
+
+// Validate an OTP code
+console.log(OTP.validateTotp("013370", "xxxxxxxxxxxxxxxx"))
+console.log(OTP.validateHotp("013370", "xxxxxxxxxxxxxxxx", 1))
 ```
 
 ## TODO
-Update impl
 Rewrite using TypeScript
+Make it available to the web
 
-# License
+## License
 Like all Tokenize implementation, this implementation is released under the BSD-3-Clause license.

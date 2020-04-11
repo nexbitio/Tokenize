@@ -25,50 +25,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package xyz.bowser65.tokenize;
+/* eslint-env jest */
 
-import lombok.Builder;
-import lombok.Getter;
+import Base32 from '../src/base32'
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.security.SecureRandom;
-
-/**
- * An OTP key
- *
- * @author Bowser65
- * @since 10/04/20
- */
-@Getter
-@SuppressWarnings({"WeakerAccess", "unused"})
-public class OTPKey {
-    private final String key;
-    private final String name;
-    private final String issuer;
-    private final boolean hotp;
-
-    @Builder
-    private OTPKey(@Nonnull final String name, @Nullable final String issuer, final boolean hotp) {
-        this.name = name;
-        this.issuer = issuer;
-        this.hotp = hotp;
-
-        final SecureRandom secureRandom = new SecureRandom();
-        final char[] key = new char[16];
-        for (int i = 0; i < 16; ++i)
-            key[i] = Base32.ALPHABET[secureRandom.nextInt(Base32.ALPHABET.length)];
-        this.key = new String(key);
-    }
-
-    /**
-     * @return A Google Authenticator compliant URI for this key
-     */
-    public String getGoogleURI() {
-        String url = "otpauth://" + (hotp ? 'h' : 't') + "otp/" + name + "?secret=" + key;
-        if (issuer != null) {
-            url += "&issuer=" + issuer;
-        }
-        return url;
-    }
-}
+test('Decodes some Base32', () => {
+  expect(Base32.decode('JVSW65ZB')).toBe('Meow!')
+})
